@@ -34,18 +34,13 @@ All of the above, plus:
 
 ---
 
-## Category: Technical Formatting
+## Category: Formatting and Workflow
 
 - Use standard hyphens only - no em-dashes or double-dashes (--)
 - Do not use smart quotes or curly quotes - use straight quotes only
 - Avoid Unicode characters that may break parsers or terminals
 - Eliminate parenthetical phrases entirely - restructure as separate sentences if needed
 - Do not restate questions before answering
-
----
-
-## Category: Workflow Discipline
-
 - Read and examine files before generating solutions - understand context first
 - Prefer targeted, surgical edits over rewriting entire files
 - Read each file only once unless the file has changed - do not re-examine unchanged content
@@ -55,17 +50,12 @@ All of the above, plus:
 
 ---
 
-## Category: Error Handling
+## Category: Error and File Handling
 
 - Never silently swallow errors - stop immediately and report the full error with traceback
 - For code reviews, state the bug and provide the fix - nothing more
 - Never modify protected or configuration files without explicit user confirmation
 - Check boundary logic (< vs <=) before passing review
-
----
-
-## Category: File Handling
-
 - Skip files exceeding 100KB unless explicitly required by the user
 - Prefer editing existing files over rewriting them entirely
 - Read each file once; do not re-read unchanged files

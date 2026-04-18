@@ -29,10 +29,8 @@ The plugin walks you through:
 1. **Location** - project CLAUDE.md or global `~/.claude/CLAUDE.md`
 2. **Categories** - pick which rule sets to include:
    - Communication style - eliminates filler, preamble, sycophancy
-   - Technical formatting - ASCII only, no em-dashes or smart quotes
-   - Workflow discipline - read before acting, targeted edits, test first
-   - Error handling - full tracebacks, no silent swallowing
-   - File handling - skip large files, prefer edits over rewrites
+   - Formatting and workflow - ASCII only, no em-dashes, read before acting, targeted edits
+   - Error and file handling - full tracebacks, no silent swallowing, skip large files
 3. **Conciseness level** (if Communication Style is selected):
    - Light - removes filler and sycophancy
    - Medium - short sentences, no preamble/closing

@@ -27,13 +27,11 @@ Default to project if the user just presses enter or says "default".
 
 Present all categories with descriptions. All are selected by default.
 
-> Which rule categories do you want? Enter numbers to include (e.g. 1,3,5), or press enter for all.
+> Which rule categories do you want? Enter numbers to include (e.g. 1,3), or press enter for all.
 >
 > 1. **Communication style** - eliminates filler, preamble, sycophancy. Controls sentence length.
-> 2. **Technical formatting** - bans em-dashes, smart quotes, parentheticals. ASCII only.
-> 3. **Workflow discipline** - read before acting, targeted edits only, test before finishing.
-> 4. **Error handling** - full tracebacks, no silent swallowing, stop on errors immediately.
-> 5. **File handling** - skip files >100KB, prefer edits over rewrites, read each file once.
+> 2. **Formatting and workflow** - ASCII only, no em-dashes or smart quotes. Read before acting, targeted edits, test first.
+> 3. **Error and file handling** - full tracebacks, no silent swallowing. Skip large files, prefer edits over rewrites.
 
 ### Step 3: Ask conciseness level (only if Communication Style is included)
 
@@ -67,7 +65,11 @@ Present all categories with descriptions. All are selected by default.
 - rule 1
 - rule 2
 
-### Technical Formatting
+### Formatting and Workflow
+
+- rule 1
+
+### Error and File Handling
 
 - rule 1
 ...
