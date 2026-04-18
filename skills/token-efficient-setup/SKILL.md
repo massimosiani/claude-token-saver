@@ -1,12 +1,12 @@
 ---
 name: token-efficient-setup
-description: Set up an AGENTS.md file with token-efficient rules. Asks questions about preferred categories and conciseness level, then generates or merges into AGENTS.md.
+description: Set up a CLAUDE.md file with token-efficient rules. Asks questions about preferred categories and conciseness level, then generates or merges into CLAUDE.md.
 disable-model-invocation: true
 ---
 
-# Token-Efficient AGENTS.md Setup
+# Token-Efficient CLAUDE.md Setup
 
-Generate an AGENTS.md file with token-efficient rules adapted from https://github.com/drona23/claude-token-efficient.
+Generate a CLAUDE.md file with token-efficient rules adapted from https://github.com/drona23/claude-token-efficient.
 
 Read the rules reference at [references/rules.md](references/rules.md) before proceeding.
 
@@ -16,10 +16,10 @@ Read the rules reference at [references/rules.md](references/rules.md) before pr
 
 Ask the user:
 
-> Where should I write the AGENTS.md?
+> Where should I write the CLAUDE.md?
 >
-> 1. **Project** (default) - `./AGENTS.md` in the current working directory
-> 2. **Global** - `~/.claude/AGENTS.md`, applies to all projects
+> 1. **Project** (default) - `./CLAUDE.md` in the current working directory
+> 2. **Global** - `~/.claude/CLAUDE.md`, applies to all projects
 
 Default to project if the user just presses enter or says "default".
 
@@ -48,14 +48,14 @@ Present all categories with descriptions. All are selected by default.
 1. Collect the selected rules from `references/rules.md` based on the user's choices
 2. For Communication Style, use only the rules up to and including the selected conciseness level (light/medium/full are cumulative)
 3. For other categories, include all rules in that category
-4. Format as a clean AGENTS.md with a header and sections per category
-5. If an AGENTS.md already exists at the target path, read it first and append a new section titled `## Token Efficiency` containing the selected rules - do not modify existing content
-6. If no AGENTS.md exists, create one with a top-level heading and the selected rules
+4. Format as a clean CLAUDE.md with a header and sections per category
+5. If a CLAUDE.md already exists at the target path, read it first and append a new section titled `## Token Efficiency` containing the selected rules - do not modify existing content
+6. If no CLAUDE.md exists, create one with a top-level heading and the selected rules
 
 ### Output format
 
 ```markdown
-# AGENTS.md
+# CLAUDE.md
 
 ## Token Efficiency
 

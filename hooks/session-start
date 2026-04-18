@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # SessionStart hook for token-efficient-setup plugin
-# Checks if AGENTS.md exists in the current project; if not, reminds the user.
+# Checks if CLAUDE.md has a Token Efficiency section; if not, reminds the user.
 
 set -euo pipefail
 
-# Check for AGENTS.md in the current working directory
-if [ -f "AGENTS.md" ]; then
+# Check for Token Efficiency section in project CLAUDE.md
+if [ -f "CLAUDE.md" ] && grep -q "Token Efficiency" "CLAUDE.md" 2>/dev/null; then
   exit 0
 fi
 
-# Also check for a global one
-if [ -f "${HOME}/.claude/AGENTS.md" ]; then
+# Also check global CLAUDE.md
+if [ -f "${HOME}/.claude/CLAUDE.md" ] && grep -q "Token Efficiency" "${HOME}/.claude/CLAUDE.md" 2>/dev/null; then
   exit 0
 fi
 
@@ -24,7 +24,7 @@ escape_for_json() {
   printf '%s' "$s"
 }
 
-message="No AGENTS.md found in this project. Run /token-efficient-setup to generate one with token-efficient rules."
+message="No token-efficient rules found in CLAUDE.md. Run /token-efficient-setup to add them."
 escaped=$(escape_for_json "$message")
 
 printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$escaped"
