@@ -8,6 +8,11 @@ Rules adapted from [claude-token-efficient](https://github.com/drona23/claude-to
 
 ```
 /plugin marketplace add massimosiani/claude-token-saver
+```
+
+Then install the plugin:
+
+```
 /plugin install claude-token-saver@claude-token-saver
 ```
 
