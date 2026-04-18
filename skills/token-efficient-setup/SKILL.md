@@ -27,7 +27,7 @@ Default to project if the user just presses enter or says "default".
 
 Present all categories with descriptions. All are selected by default.
 
-> Which rule categories do you want? (all included by default, list numbers to exclude)
+> Which rule categories do you want? Enter numbers to include (e.g. 1,3,5), or press enter for all.
 >
 > 1. **Communication style** - eliminates filler, preamble, sycophancy. Controls sentence length.
 > 2. **Technical formatting** - bans em-dashes, smart quotes, parentheticals. ASCII only.
