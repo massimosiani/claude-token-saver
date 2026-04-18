@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# SessionStart hook for token-efficient-setup plugin
+# Checks if AGENTS.md exists in the current project; if not, reminds the user.
+
+set -euo pipefail
+
+# Check for AGENTS.md in the current working directory
+if [ -f "AGENTS.md" ]; then
+  exit 0
+fi
+
+# Also check for a global one
+if [ -f "${HOME}/.claude/AGENTS.md" ]; then
+  exit 0
+fi
+
+escape_for_json() {
+  local s="$1"
+  s="${s//\\/\\\\}"
+  s="${s//\"/\\\"}"
+  s="${s//$'\n'/\\n}"
+  s="${s//$'\r'/\\r}"
+  s="${s//$'\t'/\\t}"
+  printf '%s' "$s"
+}
+
+message="No AGENTS.md found in this project. Run /token-efficient-setup to generate one with token-efficient rules."
+escaped=$(escape_for_json "$message")
+
+printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$escaped"
+
+exit 0
