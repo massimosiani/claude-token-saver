@@ -24,7 +24,7 @@ escape_for_json() {
   printf '%s' "$s"
 }
 
-message="No token-efficient rules found in CLAUDE.md. Run /token-efficient-setup to add them."
+message="No token-efficient rules found in CLAUDE.md. Run /claude-token-saver to add them."
 escaped=$(escape_for_json "$message")
 
 printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$escaped"

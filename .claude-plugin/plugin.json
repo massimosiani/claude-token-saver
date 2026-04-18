@@ -1,15 +1,15 @@
 {
-  "name": "token-efficient-setup",
+  "name": "claude-token-saver",
   "version": "1.0.0",
-  "description": "Interactive skill to generate AGENTS.md with token-efficient rules. Asks questions about preferred categories and conciseness level, then generates or merges into AGENTS.md.",
+  "description": "Interactive skill to generate CLAUDE.md with token-efficient rules. Asks questions about preferred categories and conciseness level, then generates or merges into CLAUDE.md.",
   "author": {
     "name": "Massimo Siani"
   },
-  "repository": "https://github.com/massimosiani/claude-token-efficient-setup",
+  "repository": "https://github.com/massimosiani/claude-token-saver",
   "license": "MIT",
   "keywords": [
     "token-efficiency",
-    "agents-md",
+    "claude-md",
     "setup",
     "configuration"
   ]
