@@ -1,0 +1,16 @@
+{
+  "name": "token-efficient-setup",
+  "version": "1.0.0",
+  "description": "Interactive skill to generate AGENTS.md with token-efficient rules. Asks questions about preferred categories and conciseness level, then generates or merges into AGENTS.md.",
+  "author": {
+    "name": "Massimo Siani"
+  },
+  "repository": "https://github.com/massimosiani/claude-token-efficient-setup",
+  "license": "MIT",
+  "keywords": [
+    "token-efficiency",
+    "agents-md",
+    "setup",
+    "configuration"
+  ]
+}
