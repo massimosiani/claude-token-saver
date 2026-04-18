@@ -36,7 +36,7 @@ The plugin walks you through:
    - Medium - short sentences, no preamble/closing
    - Full - maximum compression, 8-10 word sentences
 
-The rules are appended under a `## Token Efficiency` section. Existing CLAUDE.md content is preserved.
+The rules are appended under a `## Token Efficiency` section. Existing CLAUDE.md content is preserved. If your CLAUDE.md already contains similar rules, the plugin detects the overlap and skips adding duplicates.
 
 ## Session reminder
 
