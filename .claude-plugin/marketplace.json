@@ -1,0 +1,16 @@
+{
+  "name": "claude-token-saver",
+  "owner": {
+    "name": "Massimo Siani"
+  },
+  "metadata": {
+    "description": "Token-efficient CLAUDE.md generator plugin"
+  },
+  "plugins": [
+    {
+      "name": "claude-token-saver",
+      "source": "./",
+      "description": "Interactive skill to generate CLAUDE.md with token-efficient rules"
+    }
+  ]
+}
