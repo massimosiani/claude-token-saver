@@ -74,8 +74,13 @@ twice, or re-running after upgrading the plugin, must not stack a second copy.
    the rules become a subsection of whatever happens to come last. In that case place the
    new section immediately before the first separator instead.
 
-   A `# ` heading on the first line is the document title, not a separator. Skip it when
-   looking for the first one, or the rules land above the title.
+   The first `# ` heading in the file is its title, not a separator - skip it, or the
+   rules land above the title. Keying on "line 1" instead is not enough: a file can open
+   with frontmatter, an HTML comment or a blank line and still have its title first.
+
+   Ignore `# ` lines inside fenced code blocks, the same way case 3 does. A shell comment
+   like `# Build the project` inside a ```bash fence is not a heading, and inserting there
+   splits the fence and corrupts the file.
 3. **File exists with a `## Token Efficiency` heading**: replace it, on these terms.
 
    **Find every one of them, not the first.** Versions before 1.1.0 appended without
@@ -134,8 +139,11 @@ twice, or re-running after upgrading the plugin, must not stack a second copy.
 ```
 
 Keep the section heading exactly `## Token Efficiency`, at that heading level and at the
-start of the line. Both the replacement rule above and the session-start hook look for
-it.
+start of the line: the replacement rule above depends on the exact form.
+
+The session-start hook does not. It matches loosely on purpose, so that someone who
+renames the heading to `## Token Efficiency Rules` is not left with a reminder they cannot
+switch off. Do not tighten it to match this contract.
 
 ### Step 6: Confirm
 

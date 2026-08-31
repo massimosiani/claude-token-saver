@@ -100,14 +100,14 @@ are, it reminds you to run `/claude-token-saver`.
 Silence it with `CLAUDE_TOKEN_SAVER_QUIET=1`.
 
 The check is best-effort by design. It looks at `CLAUDE.md`, `CLAUDE.local.md` and
-`.claude/` at the project root - resolved with git, so a session started in a
-subdirectory still finds them - plus `~/.claude/`. It does not replicate Claude Code's
-memory loader, so it cannot see rules that are path-scoped by `paths:` frontmatter,
-reached through an `@`-import, or quoted inside a code fence.
+`.claude/` in the working directory and every directory above it, plus
+`~/.claude/CLAUDE.md` and `~/.claude/rules/`. It does not replicate Claude Code's memory
+loader, and that cuts both ways.
 
-Each of those gaps can only cause a missed reminder, never a repeating false one. That is
-the cheaper way to be wrong: a missed reminder costs one discovery, while a false one
-repeats every session.
+Rules that are path-scoped by `paths:` frontmatter, or quoted inside a code fence, make it
+go quiet when it should speak up - the cheap direction, costing one discovery. Rules
+reached through an `@`-import do the opposite: the hook cannot follow the import, so it
+reminds you about rules you already have. That is what the opt-out is for.
 
 ## Tests
 
