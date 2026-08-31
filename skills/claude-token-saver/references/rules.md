@@ -77,7 +77,7 @@ All of the above, plus:
 
 ## Category: Formatting and Error Handling
 
-- In prose, use straight quotes and standard hyphens rather than smart quotes or em-dashes. This does not reach code: `--` is a long-option prefix in shells and a comment token in SQL and Lua.
+- In your own prose, use straight quotes and standard hyphens rather than smart quotes or em-dashes. This does not reach code: `--` is a long-option prefix in shells and a comment token in SQL and Lua.
 - Keep your own prose in ASCII, so it survives terminals, logs and parsers. Never transliterate characters inside code, data or prose you were asked to edit.
 - Report an error with its full traceback rather than summarizing or swallowing it. An error that is caught and never surfaced costs far more to find later than it costs to print.
 - In a code review, state the bug and give the fix. That is the whole comment.

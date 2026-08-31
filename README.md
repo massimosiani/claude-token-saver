@@ -39,9 +39,9 @@ The plugin walks you through:
    - Full - conclusion only, with reasoning, alternatives and caveats supplied on request
 
 The rules go under a `## Token Efficiency` section, and the rest of your CLAUDE.md is
-left untouched. Re-running the command replaces that section rather than appending a
-second one, so changing your conciseness level or upgrading the plugin does not leave
-stale or contradictory rules behind.
+left untouched. Re-running the command shows you a diff and replaces that section rather
+than appending a second one, so changing your conciseness level or upgrading the plugin
+does not leave stale or contradictory rules behind. Decline the diff and nothing changes.
 
 ## Where the savings come from
 
