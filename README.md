@@ -31,12 +31,12 @@ The plugin walks you through:
 1. **Location** - project CLAUDE.md or global `~/.claude/CLAUDE.md`
 2. **Categories** - pick which rule sets to include:
    - Communication style - what the agent says: cuts filler, preamble and sycophancy, sets response length
-   - Agent workflow - what the agent does: scope discipline, no redundant verification passes, sparing subagent use, targeted edits
-   - Formatting and error handling - ASCII and straight quotes, full tracebacks, no silent failures, large-file limits
+   - Agent workflow - what the agent does: scope discipline, no redundant verification passes, sparing subagent use, targeted edits, confirmation before touching protected files
+   - Formatting and error handling - straight quotes and ASCII in prose, full tracebacks instead of silent failures, tight code-review comments, boundary-condition checks, large-file limits
 3. **Conciseness level** (if Communication style is selected):
    - Light - drops filler and sycophancy, keeps normal sentence length
    - Medium - brief answers, no preamble or closing, results over narration
-   - Full - adds selectivity: include less, but still write it in full sentences
+   - Full - conclusion only, with reasoning, alternatives and caveats supplied on request
 
 The rules go under a `## Token Efficiency` section, and the rest of your CLAUDE.md is
 left untouched. Re-running the command replaces that section rather than appending a
@@ -79,9 +79,10 @@ Two numbers worth knowing before you install this:
 
 - Upstream measures roughly **4-12%** real token savings via API benchmarks. The headline
   63% figure is word reduction on a small directional test, not a controlled study.
-- Reported research on agent context files finds machine-generated ones can *reduce* task
-  success while raising inference cost, and that hand-written ones help only when they
-  stay minimal and precise.
+- Research on agent context files, as reported in the AGENTS.md guides linked below,
+  finds machine-generated ones can *reduce* task success while raising inference cost, and
+  that hand-written ones help only when they stay minimal and precise. Those guides cite
+  the finding rather than being the study, so treat it as directional.
 
 So keep the file small, and delete any rule you do not actually want followed. Claude Code
 documentation suggests targeting **under 200 lines** per CLAUDE.md; longer files consume
@@ -93,10 +94,14 @@ provenance comments cost nothing there. Other agents may load them.
 
 ## Session reminder
 
-A session-start hook looks for a `## Token Efficiency` heading in the files Claude Code
-actually loads: `CLAUDE.md`, `.claude/CLAUDE.md` and `CLAUDE.local.md` in the working
-directory and every directory above it, then `~/.claude/CLAUDE.md`. If none has one, it
-reminds you to run `/claude-token-saver`.
+A session-start hook looks for a `## Token Efficiency` heading, ignoring matches inside
+code fences. It checks `CLAUDE.md` and `CLAUDE.local.md` in the working directory and
+every directory above it, then `.claude/CLAUDE.md` and `.claude/rules/*.md` at the project
+root, then the same pair under `~/.claude/`, then the managed-policy locations. If none
+has one, it reminds you to run `/claude-token-saver`.
+
+It does not resolve `@`-imports, so rules reached only through an import still trigger the
+reminder.
 
 ## Sources
 
@@ -104,8 +109,9 @@ reminds you to run `/claude-token-saver`.
   original rule set and the benchmark numbers quoted above.
 - Anthropic's prompt-audit and model-migration guidance bundled with Claude Code, reachable
   as `/claude-api prompt-audit` - the source for the anti-patterns this rule set drops
-  (numeric output ceilings, banned-phrase lists, plan-before-acting, verification
-  scaffolding) and the model-tuned rules it adds.
+  (numeric output ceilings, banned-phrase lists, plan-before-acting) and the model-tuned
+  rules it adds. The verification rule was reworked rather than dropped, so that removing
+  the redundant second pass does not also remove running the tests.
 - [How Claude remembers your project](https://code.claude.com/docs/en/memory) - CLAUDE.md
   locations, the 200-line guidance, HTML comment stripping.
 - AGENTS.md guidance for the cross-tool view of context files:
