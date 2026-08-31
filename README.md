@@ -94,14 +94,13 @@ provenance comments cost nothing there. Other agents may load them.
 
 ## Session reminder
 
-A session-start hook looks for a `## Token Efficiency` heading, ignoring matches inside
-code fences. It checks `CLAUDE.md` and `CLAUDE.local.md` in the working directory and
-every directory above it, then `.claude/CLAUDE.md` and `.claude/rules/*.md` at the project
-root, then the same pair under `~/.claude/`, then the managed-policy locations. If none
-has one, it reminds you to run `/claude-token-saver`.
+A session-start hook checks whether your CLAUDE.md already contains token-efficient
+rules. If it does not, it reminds you to run `/claude-token-saver`.
 
-It does not resolve `@`-imports, so rules reached only through an import still trigger the
-reminder.
+The check is best-effort: it looks at the project and user CLAUDE.md rather than resolving
+everything Claude Code loads, so rules kept in `.claude/rules/`, reached through an
+`@`-import, or living in a parent directory can still produce a reminder. Reworking it is
+tracked in [#2](https://github.com/massimosiani/claude-token-saver/issues/2).
 
 ## Sources
 

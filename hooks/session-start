@@ -1,62 +1,16 @@
 #!/usr/bin/env bash
-# SessionStart hook for the claude-token-saver plugin.
-# Reminds the user to run /claude-token-saver unless an instruction file already in
-# context carries a Token Efficiency section.
+# SessionStart hook for token-efficient-setup plugin
+# Checks if CLAUDE.md has a Token Efficiency section; if not, reminds the user.
 
 set -euo pipefail
-shopt -s nullglob
 
-# Match the heading the skill emits: at the start of a line, at "##" level, and outside
-# fenced code blocks. A CLAUDE.md that merely documents this plugin quotes the heading in
-# an example fence, and must still get the reminder.
-has_rules() {
-  [ -f "$1" ] || return 1
-  awk '
-    /^[[:space:]]*```/ { fenced = !fenced; next }
-    !fenced && /^## Token Efficiency[[:space:]]*$/ { found = 1; exit }
-    END { exit !found }
-  ' "$1" 2>/dev/null
-}
-
-any_has_rules() {
-  local file
-  for file in "$@"; do
-    if has_rules "$file"; then
-      return 0
-    fi
-  done
-  return 1
-}
-
-# CLAUDE.md and CLAUDE.local.md load from the working directory and every directory
-# above it, so a session started in a subdirectory still has the repo root's rules.
-dir="$PWD"
-while :; do
-  if any_has_rules "$dir/CLAUDE.md" "$dir/CLAUDE.local.md"; then
-    exit 0
-  fi
-  [ "$dir" = "/" ] && break
-  dir="$(dirname "$dir")"
-done
-
-# .claude/CLAUDE.md and .claude/rules/ are project-root only - they are not walked up.
-# Treating them as recursive would let a sibling project's config silence the reminder
-# for a project that has no rules loaded at all.
-if any_has_rules "$PWD/.claude/CLAUDE.md" "$PWD"/.claude/rules/*.md; then
+# Check for Token Efficiency section in project CLAUDE.md
+if [ -f "CLAUDE.md" ] && grep -q "Token Efficiency" "CLAUDE.md" 2>/dev/null; then
   exit 0
 fi
 
-# User level. HOME can be unset under systemd, containers and cron wrappers; without the
-# guard, set -u aborts the hook and the reminder never prints.
-home="${HOME:-}"
-if [ -n "$home" ] && any_has_rules "$home/.claude/CLAUDE.md" "$home"/.claude/rules/*.md; then
-  exit 0
-fi
-
-# Organization-wide managed policy files.
-if any_has_rules \
-  "/Library/Application Support/ClaudeCode/CLAUDE.md" \
-  "/etc/claude-code/CLAUDE.md"; then
+# Also check global CLAUDE.md
+if [ -f "${HOME}/.claude/CLAUDE.md" ] && grep -q "Token Efficiency" "${HOME}/.claude/CLAUDE.md" 2>/dev/null; then
   exit 0
 fi
 

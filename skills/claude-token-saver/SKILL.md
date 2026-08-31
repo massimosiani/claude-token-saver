@@ -75,10 +75,8 @@ twice, or re-running after upgrading the plugin, must not stack a second copy.
    of them have to go.
 
    **Ignore headings inside fenced code blocks.** A CLAUDE.md that documents this plugin
-   quotes the heading in an example; that is not a live section. The session-start hook
-   skips fenced matches for the same reason, so a file it reminded you about can still
-   contain the heading in a fence - treating that as the section would shred the user's
-   example.
+   quotes the heading in an example; that is not a live section, and replacing from inside
+   the fence would shred the user's example.
 
    **Bound each section correctly**: from its heading to the next heading at `##` level or
    higher - a line beginning `## ` or `# `, note the trailing space - or to end of file,
@@ -128,9 +126,8 @@ twice, or re-running after upgrading the plugin, must not stack a second copy.
 ```
 
 Keep the section heading exactly `## Token Efficiency`, at that heading level and at the
-start of the line. Both the replacement rule above and the session-start hook match on
-it. The hook ignores matches inside fenced code blocks, so a CLAUDE.md that documents
-this plugin by quoting the heading in an example still gets the reminder.
+start of the line. Both the replacement rule above and the session-start hook look for
+it.
 
 ### Step 6: Confirm
 
