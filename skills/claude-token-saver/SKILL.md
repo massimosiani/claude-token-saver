@@ -67,7 +67,11 @@ twice, or re-running after upgrading the plugin, must not stack a second copy.
 1. **No file at the target path**: create one with a top-level heading and the new
    section.
 2. **File exists without a `## Token Efficiency` heading**: append the new section and
-   leave everything above it untouched.
+   leave everything above it untouched. Append at the end of the file, unless the file
+   uses `# ` headings as section separators - a `##` section appended after one of those
+   reads as part of it. In that case place it immediately before the first such heading,
+   so the rules stay a top-level section rather than becoming a subsection of whatever
+   happens to come last.
 3. **File exists with a `## Token Efficiency` heading**: replace it, on these terms.
 
    **Find every one of them, not the first.** Versions before 1.1.0 appended without

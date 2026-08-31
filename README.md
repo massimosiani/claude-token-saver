@@ -94,13 +94,27 @@ provenance comments cost nothing there. Other agents may load them.
 
 ## Session reminder
 
-A session-start hook checks whether your CLAUDE.md already contains token-efficient
-rules. If it does not, it reminds you to run `/claude-token-saver`.
+A session-start hook checks whether token-efficient rules are already in place. If none
+are, it reminds you to run `/claude-token-saver`.
 
-The check is best-effort: it looks at the project and user CLAUDE.md rather than resolving
-everything Claude Code loads, so rules kept in `.claude/rules/`, reached through an
-`@`-import, or living in a parent directory can still produce a reminder. Reworking it is
-tracked in [#2](https://github.com/massimosiani/claude-token-saver/issues/2).
+Silence it with `CLAUDE_TOKEN_SAVER_QUIET=1`.
+
+The check is best-effort by design. It looks at `CLAUDE.md`, `CLAUDE.local.md` and
+`.claude/` at the project root - resolved with git, so a session started in a
+subdirectory still finds them - plus `~/.claude/`. It does not replicate Claude Code's
+memory loader, so it cannot see rules that are path-scoped by `paths:` frontmatter,
+reached through an `@`-import, or quoted inside a code fence.
+
+Each of those gaps can only cause a missed reminder, never a repeating false one. That is
+the cheaper way to be wrong: a missed reminder costs one discovery, while a false one
+repeats every session.
+
+## Tests
+
+`tests/run.sh` covers the hook - the only executable code here - across project, user and
+nested-rules locations, sessions started in a subdirectory, an unset `HOME`, and the
+opt-out. `tests/fixtures/merge/` holds CLAUDE.md fixtures for exercising the merge step by
+hand, since that step is instructions to a model rather than code.
 
 ## Sources
 
