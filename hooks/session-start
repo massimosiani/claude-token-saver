@@ -1,18 +1,24 @@
 #!/usr/bin/env bash
-# SessionStart hook for token-efficient-setup plugin
-# Checks if CLAUDE.md has a Token Efficiency section; if not, reminds the user.
+# SessionStart hook for the claude-token-saver plugin.
+# Checks whether any loaded CLAUDE.md has a Token Efficiency section; if none does,
+# reminds the user to run /claude-token-saver.
 
 set -euo pipefail
 
-# Check for Token Efficiency section in project CLAUDE.md
-if [ -f "CLAUDE.md" ] && grep -q "Token Efficiency" "CLAUDE.md" 2>/dev/null; then
-  exit 0
-fi
+# Every documented location Claude Code loads a CLAUDE.md from, in load order.
+# ./.claude/CLAUDE.md is as valid a project location as ./CLAUDE.md, so a project
+# using it must not be nagged.
+candidates=(
+  "CLAUDE.md"
+  ".claude/CLAUDE.md"
+  "${HOME}/.claude/CLAUDE.md"
+)
 
-# Also check global CLAUDE.md
-if [ -f "${HOME}/.claude/CLAUDE.md" ] && grep -q "Token Efficiency" "${HOME}/.claude/CLAUDE.md" 2>/dev/null; then
-  exit 0
-fi
+for candidate in "${candidates[@]}"; do
+  if [ -f "$candidate" ] && grep -q "Token Efficiency" "$candidate" 2>/dev/null; then
+    exit 0
+  fi
+done
 
 escape_for_json() {
   local s="$1"
