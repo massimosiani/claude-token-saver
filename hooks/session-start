@@ -1,16 +1,41 @@
 #!/usr/bin/env bash
-# SessionStart hook for token-efficient-setup plugin
-# Checks if CLAUDE.md has a Token Efficiency section; if not, reminds the user.
+# SessionStart hook for the claude-token-saver plugin.
+# Reminds the user to run /claude-token-saver when no token-efficient rules are in sight.
+#
+# This check is best-effort by design. It does not replicate Claude Code's memory loader,
+# because doing so in bash means tracking the loader's every detail and drifting from it
+# at each one. It cannot see rules that are path-scoped by `paths:` frontmatter, reached
+# through an @-import, or quoted inside a code fence.
+#
+# Each of those gaps can only cause a MISSED reminder, never a repeating false one. That
+# is the cheap direction: a missed reminder costs one discovery, while a false one repeats
+# every session forever. CLAUDE_TOKEN_SAVER_QUIET=1 silences the hook outright.
 
 set -euo pipefail
 
-# Check for Token Efficiency section in project CLAUDE.md
-if [ -f "CLAUDE.md" ] && grep -q "Token Efficiency" "CLAUDE.md" 2>/dev/null; then
+if [ -n "${CLAUDE_TOKEN_SAVER_QUIET:-}" ]; then
   exit 0
 fi
 
-# Also check global CLAUDE.md
-if [ -f "${HOME}/.claude/CLAUDE.md" ] && grep -q "Token Efficiency" "${HOME}/.claude/CLAUDE.md" 2>/dev/null; then
+# Resolve the project root so a session started in a subdirectory still sees the repo's
+# rules. Non-git projects fall back to the working directory.
+root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [ -z "$root" ]; then
+  root="$PWD"
+fi
+
+targets=("$root/CLAUDE.md" "$root/CLAUDE.local.md" "$root/.claude")
+
+# HOME can be unset under systemd units, containers and cron wrappers. Guarded, because
+# `set -u` would otherwise abort the hook and the reminder would never print.
+home="${HOME:-}"
+if [ -n "$home" ]; then
+  targets+=("$home/.claude")
+fi
+
+# Deliberately a loose match, not an anchored one. An anchored heading match leaves a user
+# who wrote `## Token Efficiency Rules` with a reminder they cannot switch off.
+if grep -rqs "Token Efficiency" "${targets[@]}"; then
   exit 0
 fi
 
