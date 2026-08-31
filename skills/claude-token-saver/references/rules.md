@@ -21,7 +21,8 @@ Two things came out of that audit and shape the list below:
   behaviors are *reversed* on neighbouring generations. Opus 4.7 and 4.8 under-delegate
   to subagents where Opus 5 over-delegates, and the 4.6 family is documented as more
   concise where Opus 5 narrates more. Drop these lines when targeting anything else.
-- Every other rule is a general agent rule and applies anywhere.
+- Unmarked rules are not model-specific. Several were sharpened using Claude's model
+  notes, but each states general agent practice worth keeping on any model.
 
 ---
 
@@ -76,8 +77,8 @@ All of the above, plus:
 
 ## Category: Formatting and Error Handling
 
-- Use straight quotes and standard hyphens. No smart quotes, em-dashes or double-dashes.
-- Stay in ASCII wherever a character has an ASCII equivalent, so output survives terminals, logs and parsers.
+- In prose, use straight quotes and standard hyphens rather than smart quotes or em-dashes. This does not reach code: `--` is a long-option prefix in shells and a comment token in SQL and Lua.
+- Keep your own prose in ASCII, so it survives terminals, logs and parsers. Never transliterate characters inside code, data or prose you were asked to edit.
 - Report an error with its full traceback rather than summarizing or swallowing it. An error that is caught and never surfaced costs far more to find later than it costs to print.
 - In a code review, state the bug and give the fix. That is the whole comment.
 - When reviewing code, check boundary conditions, `<` against `<=`, before calling the review done.
