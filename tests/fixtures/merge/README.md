@@ -8,7 +8,7 @@ against `02` found immediately.
 | Fixture | Expected outcome |
 |---|---|
 | *(no file)* | Creates a CLAUDE.md with a top-level heading and one section. |
-| `02-no-section.md` | Appends. The section must stay top-level, not land under `# Build commands`. |
+| `02-no-section.md` | Appends before `# Build commands`, not after it and not above the `# CLAUDE.md` title. Tests both halves of the placement rule. |
 | `03-user-edited-section.md` | Shows a diff surfacing `MY EDIT` as a removal, and changes nothing if declined. `# Deployment` survives. |
 | `04-two-sections-and-fence.md` | The hard one. Both live sections replaced by one; the fenced example left intact; `## Team notes` and `# Deployment` preserved; no `8-10 word` or `Think before acting` rule left anywhere. |
 
