@@ -1,24 +1,33 @@
 #!/usr/bin/env bash
 # SessionStart hook for the claude-token-saver plugin.
-# Checks whether any loaded CLAUDE.md has a Token Efficiency section; if none does,
-# reminds the user to run /claude-token-saver.
+# Reminds the user to run /claude-token-saver unless a CLAUDE.md already in context
+# carries a Token Efficiency section.
 
 set -euo pipefail
 
-# Every documented location Claude Code loads a CLAUDE.md from, in load order.
-# ./.claude/CLAUDE.md is as valid a project location as ./CLAUDE.md, so a project
-# using it must not be nagged.
-candidates=(
-  "CLAUDE.md"
-  ".claude/CLAUDE.md"
-  "${HOME}/.claude/CLAUDE.md"
-)
+# Match the heading the skill emits, anchored: an unanchored match would let any passing
+# mention of the phrase suppress the reminder forever.
+has_rules() {
+  [ -f "$1" ] && grep -q '^## Token Efficiency' "$1" 2>/dev/null
+}
 
-for candidate in "${candidates[@]}"; do
-  if [ -f "$candidate" ] && grep -q "Token Efficiency" "$candidate" 2>/dev/null; then
-    exit 0
-  fi
+# Claude Code loads CLAUDE.md and CLAUDE.local.md from the working directory and every
+# directory above it, so a session started in a subdirectory still has the repo root's
+# rules in context. Walk up before falling back to the user-level file.
+dir="$PWD"
+while :; do
+  for candidate in "$dir/CLAUDE.md" "$dir/.claude/CLAUDE.md" "$dir/CLAUDE.local.md"; do
+    if has_rules "$candidate"; then
+      exit 0
+    fi
+  done
+  [ "$dir" = "/" ] && break
+  dir="$(dirname "$dir")"
 done
+
+if has_rules "${HOME}/.claude/CLAUDE.md"; then
+  exit 0
+fi
 
 escape_for_json() {
   local s="$1"
