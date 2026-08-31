@@ -33,7 +33,7 @@ Present all categories with descriptions. All are selected by default.
 >
 > 1. **Communication style** - what the agent says. Cuts filler, preamble and sycophancy, and sets response length.
 > 2. **Agent workflow** - what the agent does. Scope discipline, verification without a redundant second pass, sparing subagent use, targeted edits, confirmation before touching protected files. This is where the largest savings are.
-> 3. **Formatting and error handling** - ASCII and straight quotes, full tracebacks instead of silent failures, tight code-review comments, large-file limits.
+> 3. **Formatting and error handling** - straight quotes and ASCII in prose, full tracebacks instead of silent failures, tight code-review comments, boundary-condition checks, large-file limits.
 
 ### Step 3: Ask conciseness level (only if Communication Style is included)
 
@@ -41,7 +41,7 @@ Present all categories with descriptions. All are selected by default.
 >
 > 1. **Light** - drops filler and sycophancy, keeps normal sentence length
 > 2. **Medium** - brief answers, no preamble or closing, results over narration
-> 3. **Full** - conclusion only, with reasoning and caveats supplied on request
+> 3. **Full** - conclusion only, with reasoning, alternatives and caveats supplied on request
 
 ### Step 4: Generate
 
@@ -57,19 +57,30 @@ Present all categories with descriptions. All are selected by default.
 
 ### Step 5: Merge
 
-The merge must be idempotent. Running the command twice, or re-running it after upgrading
-the plugin, must leave exactly one `## Token Efficiency` section.
+The merge must leave exactly one `## Token Efficiency` section. Running the command
+twice, or re-running after upgrading the plugin, must not stack a second copy.
 
-1. If the target file already contains a `## Token Efficiency` heading, **replace that
-   whole section** - from the heading down to the next `##` heading or end of file - with
-   the newly generated one. Do not append a second copy.
-   Earlier versions of this plugin emitted different subsection names (`Formatting and
-   Workflow`, `Error and File Handling`) and rules that the current set contradicts, such
-   as an 8-10 word sentence cap. Replacing the whole section is what clears them; matching
-   on subsection names does not.
-2. If the file exists without that heading, append the new section and leave everything
-   above it untouched.
-3. If no file exists, create one with a top-level heading and the new section.
+1. **No file at the target path**: create one with a top-level heading and the new
+   section.
+2. **File exists without a `## Token Efficiency` heading**: append the new section and
+   leave everything above it untouched.
+3. **File exists with a `## Token Efficiency` heading**: the existing section runs from
+   that heading down to the next heading at `##` level or higher - a line beginning `## `
+   or `# `, note the trailing space - or to end of file. Two traps: the `###` subsection
+   headings inside the section are part of it, so a naive "next line starting with `##`"
+   scan stops immediately and orphans the rest; and a `# ` heading below the section is
+   *not* part of it, so a scan that only looks for `##` runs past it and deletes the
+   user's other sections.
+
+   **Ask before replacing.** Show the user a diff of their existing section against the
+   one you would write, and get confirmation. Step 6 invites people to edit these rules,
+   so an existing section may hold deliberate changes; regenerating over them silently
+   destroys the work this skill asked for.
+
+   On confirmation replace the whole section rather than merging rule by rule. Earlier
+   versions emitted different subsection names (`Formatting and Workflow`, `Error and
+   File Handling`) and rules the current set contradicts, such as an 8-10 word sentence
+   cap; only a whole-section replacement clears those.
 
 ### Output format
 
@@ -98,8 +109,9 @@ the plugin, must leave exactly one `## Token Efficiency` section.
 ```
 
 Keep the section heading exactly `## Token Efficiency`, at that heading level and at the
-start of the line. The session-start hook matches on it to decide whether to remind the
-user, and both replacement above and that check depend on it.
+start of the line. Both the replacement rule above and the session-start hook match on
+it. The hook ignores matches inside fenced code blocks, so a CLAUDE.md that documents
+this plugin by quoting the heading in an example still gets the reminder.
 
 ### Step 6: Confirm
 
