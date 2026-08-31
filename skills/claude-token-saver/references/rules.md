@@ -78,6 +78,6 @@ All of the above, plus:
 - Give a parenthetical aside its own sentence, or cut it.
 - Report an error with its full traceback and stop there. A caught error that is never surfaced costs far more to find later than it costs to print.
 - In a code review, state the bug and give the fix. That is the whole comment.
-- Check boundary conditions, `<` against `<=`, before calling a review done.
+- When reviewing code, check boundary conditions, `<` against `<=`, before calling the review done.
 - Ask before modifying configuration, credential or otherwise protected files.
 - Skip files over 100KB unless the task needs their contents.
