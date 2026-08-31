@@ -38,9 +38,10 @@ The plugin walks you through:
    - Medium - brief answers, no preamble or closing, results over narration
    - Full - adds selectivity: include less, but still write it in full sentences
 
-The rules are appended under a `## Token Efficiency` section. Existing CLAUDE.md content
-is preserved. If your CLAUDE.md already contains similar rules, the plugin detects the
-overlap and skips adding duplicates.
+The rules go under a `## Token Efficiency` section, and the rest of your CLAUDE.md is
+left untouched. Re-running the command replaces that section rather than appending a
+second one, so changing your conciseness level or upgrading the plugin does not leave
+stale or contradictory rules behind.
 
 ## Where the savings come from
 
@@ -58,9 +59,12 @@ you skip the rest. Prose compression, by contrast, has a floor: past a point it 
 fragments and abbreviations that cost the reader a reread, and the saving goes with it.
 The rules aim for *include less*, not *write it shorter*.
 
-Rules tuned to a specific model generation are marked `(Claude 4.6+)` and carry their
-reason inline, so you can tell at a glance which lines to drop if you point the file at a
-different agent.
+Rules tuned to a specific model are marked `(Claude Opus 5)` and carry their reason
+inline, so you can tell at a glance which lines to drop if you point the file at another
+agent. The marker names one model on purpose: several of these behaviors reverse between
+generations - Opus 4.7 and 4.8 under-delegate to subagents where Opus 5 over-delegates,
+and the 4.6 family is documented as more concise where Opus 5 narrates more - so a wider
+range would be wrong.
 
 ## When this helps, and when it does not
 
@@ -89,9 +93,10 @@ provenance comments cost nothing there. Other agents may load them.
 
 ## Session reminder
 
-A session-start hook checks `./CLAUDE.md`, `./.claude/CLAUDE.md` and
-`~/.claude/CLAUDE.md` for a Token Efficiency section. If none has one, it reminds you to
-run `/claude-token-saver`.
+A session-start hook looks for a `## Token Efficiency` heading in the files Claude Code
+actually loads: `CLAUDE.md`, `.claude/CLAUDE.md` and `CLAUDE.local.md` in the working
+directory and every directory above it, then `~/.claude/CLAUDE.md`. If none has one, it
+reminds you to run `/claude-token-saver`.
 
 ## Sources
 
