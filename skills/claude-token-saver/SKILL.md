@@ -66,21 +66,16 @@ twice, or re-running after upgrading the plugin, must not stack a second copy.
 
 1. **No file at the target path**: create one with a top-level heading and the new
    section.
-2. **File exists without a `## Token Efficiency` heading**: append the new section and
-   leave everything above it untouched.
+2. **File exists without a `## Token Efficiency` heading**: append the new section at the
+   end of the file and leave everything above it untouched.
 
-   Append at the end of the file, with one exception. If the file uses `# ` headings as
-   section separators, a `##` section appended after one of them reads as part of it, and
-   the rules become a subsection of whatever happens to come last. In that case place the
-   new section immediately before the first separator instead.
+   Nothing cleverer than that. An earlier version tried to keep the section out of a
+   trailing `# ` section by placing it before the first separator, and that rule was wrong
+   three times running - on the document title, on files that open with a separator
+   instead of a title, and on `# ` comment lines inside code fences, where inserting
+   splits the fence. Claude Code flattens the file into context, so the nesting is
+   cosmetic; a corrupted CLAUDE.md is not.
 
-   The first `# ` heading in the file is its title, not a separator - skip it, or the
-   rules land above the title. Keying on "line 1" instead is not enough: a file can open
-   with frontmatter, an HTML comment or a blank line and still have its title first.
-
-   Ignore `# ` lines inside fenced code blocks, the same way case 3 does. A shell comment
-   like `# Build the project` inside a ```bash fence is not a heading, and inserting there
-   splits the fence and corrupts the file.
 3. **File exists with a `## Token Efficiency` heading**: replace it, on these terms.
 
    **Find every one of them, not the first.** Versions before 1.1.0 appended without
@@ -106,6 +101,10 @@ twice, or re-running after upgrading the plugin, must not stack a second copy.
    **If the user declines, change nothing** and say the file was left as it is. Do not
    fall through to appending: a second section is the outcome this whole step exists to
    prevent.
+
+   **The survivor takes the position of the first section it replaced**, and the others
+   are removed outright. Without that, two implementations can both satisfy this spec and
+   produce different files.
 
    On confirmation replace wholesale rather than merging rule by rule. Earlier versions
    emitted different subsection names (`Formatting and Workflow`, `Error and File
@@ -141,9 +140,9 @@ twice, or re-running after upgrading the plugin, must not stack a second copy.
 Keep the section heading exactly `## Token Efficiency`, at that heading level and at the
 start of the line: the replacement rule above depends on the exact form.
 
-The session-start hook does not. It matches loosely on purpose, so that someone who
-renames the heading to `## Token Efficiency Rules` is not left with a reminder they cannot
-switch off. Do not tighten it to match this contract.
+The session-start hook does not, and must not be tightened to match. It matches loosely on
+purpose, so that renaming the heading to `## Token Efficiency Rules` does not leave someone
+with a reminder they cannot switch off.
 
 ### Step 6: Confirm
 

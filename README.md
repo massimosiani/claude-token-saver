@@ -99,15 +99,16 @@ are, it reminds you to run `/claude-token-saver`.
 
 Silence it with `CLAUDE_TOKEN_SAVER_QUIET=1`.
 
-The check is best-effort by design. It looks at `CLAUDE.md`, `CLAUDE.local.md` and
-`.claude/` in the working directory and every directory above it, plus
-`~/.claude/CLAUDE.md` and `~/.claude/rules/`. It does not replicate Claude Code's memory
-loader, and that cuts both ways.
+It checks exactly two files: `./CLAUDE.md` and `~/.claude/CLAUDE.md`. Any non-empty
+`CLAUDE_TOKEN_SAVER_QUIET` silences it.
 
-Rules that are path-scoped by `paths:` frontmatter, or quoted inside a code fence, make it
-go quiet when it should speak up - the cheap direction, costing one discovery. Rules
-reached through an `@`-import do the opposite: the hook cannot follow the import, so it
-reminds you about rules you already have. That is what the opt-out is for.
+It will therefore sometimes remind you when you are already set up - rules in
+`.claude/rules/`, reached through an `@`-import, or a session started in a subdirectory.
+That is deliberate. Earlier versions tried to work out what Claude Code had actually
+loaded, and every mechanism added to get closer produced its own bug, including one that
+silenced the reminder for every user who had the plugin installed. Naming the opt-out in
+the reminder makes being wrong cost one line of reading, which is cheaper than being
+right. The rationale lives in the comment at the top of `hooks/session-start`.
 
 ## Tests
 

@@ -1,51 +1,36 @@
 #!/usr/bin/env bash
 # SessionStart hook for the claude-token-saver plugin.
-# Reminds the user to run /claude-token-saver when no token-efficient rules are in sight.
 #
-# This check is best-effort by design: it does not replicate Claude Code's memory loader.
-# It cannot see rules that are path-scoped by `paths:` frontmatter or quoted inside a code
-# fence, which make it go quiet; and it cannot follow an @-import, which makes it remind
-# you about rules you already have. CLAUDE_TOKEN_SAVER_QUIET=1 silences it outright.
+# Deliberately minimal. Earlier versions tried to work out which CLAUDE.md files Claude
+# Code had actually loaded - walking parent directories, globbing rules directories,
+# tracking code fences. Every mechanism added its own defects. The worst: a recursive
+# scan of ~/.claude matched this plugin's own installed copy under plugins/cache and
+# silenced the reminder for every user who had the plugin, and the fixtures written to
+# catch that were blind to half of it.
 #
-# Two rules keep it honest, both learned the hard way:
-#   - Name the memory paths. Never recurse a whole directory: `grep -r` over ~/.claude
-#     matches this plugin's own installed copy under plugins/cache, which silences the
-#     reminder for every user who has the plugin.
-#   - Walk up from the working directory. Anchoring on the git root misses a CLAUDE.md
-#     below it, and lands in the wrong repo entirely for submodules or a git-managed $HOME.
+# So this checks two named files and nothing else, and the reminder names the opt-out.
+# That is the trade. It will sometimes remind someone who is already set up - rules in
+# .claude/rules, reached through an @-import, or a session started in a subdirectory -
+# and the cost of being wrong is one line of reading instead of a bug to fix.
+#
+# If you are tempted to make it smarter, read the four rounds of review on PR #3 first.
 
 set -euo pipefail
 
-case "${CLAUDE_TOKEN_SAVER_QUIET:-}" in
-  "" | 0 | false | no) ;;
-  *) exit 0 ;;
-esac
-
-# CLAUDE.md and CLAUDE.local.md load from the working directory and every directory above
-# it. `${dir%/*}` walks up without forking dirname per level.
-targets=()
-dir="$PWD"
-while :; do
-  targets+=("$dir/CLAUDE.md" "$dir/CLAUDE.local.md" "$dir/.claude/CLAUDE.md" "$dir/.claude/rules")
-  [ "$dir" = "/" ] && break
-  dir="${dir%/*}"
-  [ -n "$dir" ] || dir="/"
-done
-
-# HOME can be unset under systemd units, containers and cron wrappers. Guarded, because
-# `set -u` would otherwise abort the hook and the reminder would never print.
-home="${HOME:-}"
-if [ -n "$home" ]; then
-  targets+=("$home/.claude/CLAUDE.md" "$home/.claude/rules")
-fi
-
-# Deliberately a loose match, not an anchored one. An anchored heading match leaves a user
-# who wrote `## Token Efficiency Rules` with a reminder they cannot switch off. `-r` only
-# ever descends the named rules directories, which are small.
-if grep -rqs "Token Efficiency" "${targets[@]}"; then
+# Any non-empty value silences the hook. Not a truthy test: an earlier version whitelisted
+# "0", "false" and "no", which meant CLAUDE_TOKEN_SAVER_QUIET=off silenced it instead.
+if [ -n "${CLAUDE_TOKEN_SAVER_QUIET:-}" ]; then
   exit 0
 fi
 
-printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "No token-efficient rules found in CLAUDE.md. Run /claude-token-saver to add them."\n  }\n}\n'
+for file in "$PWD/CLAUDE.md" "${HOME:-/nonexistent}/.claude/CLAUDE.md"; do
+  if [ -f "$file" ] && grep -q "Token Efficiency" "$file" 2>/dev/null; then
+    exit 0
+  fi
+done
+
+# %s with a quoted argument, so the message never becomes part of the format string.
+message="No token-efficient rules found in CLAUDE.md. Run /claude-token-saver to add them, or set CLAUDE_TOKEN_SAVER_QUIET=1 to silence this."
+printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$message"
 
 exit 0
