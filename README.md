@@ -97,10 +97,9 @@ provenance comments cost nothing there. Other agents may load them.
 A session-start hook checks whether token-efficient rules are already in place. If none
 are, it reminds you to run `/claude-token-saver`.
 
-Silence it with `CLAUDE_TOKEN_SAVER_QUIET=1`.
+Silence it by setting `CLAUDE_TOKEN_SAVER_QUIET` to any non-empty value.
 
-It checks exactly two files: `./CLAUDE.md` and `~/.claude/CLAUDE.md`. Any non-empty
-`CLAUDE_TOKEN_SAVER_QUIET` silences it.
+It checks exactly two files: `./CLAUDE.md` and `~/.claude/CLAUDE.md`.
 
 It will therefore sometimes remind you when you are already set up - rules in
 `.claude/rules/`, reached through an `@`-import, or a session started in a subdirectory.
@@ -112,10 +111,17 @@ right. The rationale lives in the comment at the top of `hooks/session-start`.
 
 ## Tests
 
-`tests/run.sh` covers the hook - the only executable code here - across project, user and
-nested-rules locations, sessions started in a subdirectory, an unset `HOME`, and the
-opt-out. `tests/fixtures/merge/` holds CLAUDE.md fixtures for exercising the merge step by
-hand, since that step is instructions to a model rather than code.
+`tests/run.sh` covers the hook, the only executable code here: the two files it checks, a
+hand-edited heading, an unset `HOME`, and the opt-out. It also pins the cases where the
+hook deliberately reminds you anyway - a session started in a subdirectory, rules in
+`.claude/` - so that changing them is a deliberate act rather than an accident.
+
+Two fixture rules keep the suite honest, both learned by shipping a bug it could not see.
+They are documented in the header comment of `tests/run.sh`, next to the code they
+constrain.
+
+`tests/fixtures/merge/` holds CLAUDE.md fixtures for exercising the merge step by hand,
+since that step is instructions to a model rather than code.
 
 ## Sources
 

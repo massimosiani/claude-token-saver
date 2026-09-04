@@ -2,11 +2,13 @@
 # SessionStart hook for the claude-token-saver plugin.
 #
 # Deliberately minimal. Earlier versions tried to work out which CLAUDE.md files Claude
-# Code had actually loaded - walking parent directories, globbing rules directories,
-# tracking code fences. Every mechanism added its own defects. The worst: a recursive
-# scan of ~/.claude matched this plugin's own installed copy under plugins/cache and
-# silenced the reminder for every user who had the plugin, and the fixtures written to
-# catch that were blind to half of it.
+# Code had actually loaded, and each mechanism added its own defects.
+#
+# The one that mattered was recursive descent: `grep -r` over ~/.claude reached this
+# plugin's own installed copy under plugins/cache, which contains the string below, so
+# the reminder never fired for any user who had the plugin. Note the specific culprit -
+# recursion into a directory nobody named. Walking *up* from $PWD was a separate feature
+# with milder bugs of its own, and cannot reach plugins/cache at all.
 #
 # So this checks two named files and nothing else, and the reminder names the opt-out.
 # That is the trade. It will sometimes remind someone who is already set up - rules in

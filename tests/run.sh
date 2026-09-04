@@ -89,15 +89,44 @@ sandbox; printf '## Token Efficiency Rules\n\n- mine\n' > "$WORK/CLAUDE.md"
          check "hand-edited heading still counts" silent "$WORK" "$SB/home" "-"
 
 # Documented limitations, pinned so that changing them is a deliberate act.
+# The most common real configuration: a project CLAUDE.md with build notes and no marker,
+# plus global rules. Without this, the loop's second iteration is only ever reached
+# because the first file is absent, never because its grep failed.
+sandbox; printf '# CLAUDE.md\n\nBuild with pnpm.\n' > "$WORK/CLAUDE.md"
+         printf '%s' "$RULES" > "$SB/home/.claude/CLAUDE.md"
+         check "project file without marker, global with it" silent "$WORK" "$SB/home" "-"
+
+# Documented limitations, pinned so that changing them is a deliberate act.
 sandbox; printf '%s' "$RULES" > "$WORK/CLAUDE.md"; mkdir -p "$WORK/src"
          check "subdirectory reminds (known limitation)" reminds "$WORK/src" "$SB/home" "-"
+sandbox; mkdir -p "$WORK/.claude/rules"; printf '%s' "$RULES" > "$WORK/.claude/rules/tokens.md"
+         check ".claude/rules reminds (known limitation)" reminds "$WORK" "$SB/home" "-"
 sandbox; mkdir -p "$WORK/.claude"; printf '%s' "$RULES" > "$WORK/.claude/CLAUDE.md"
          check ".claude/CLAUDE.md reminds (known limitation)" reminds "$WORK" "$SB/home" "-"
 
 sandbox; check "QUIET=1 silences" silent "$WORK" "$SB/home" "1"
 sandbox; check "QUIET=off also silences (any value)" silent "$WORK" "$SB/home" "off"
 sandbox; check "QUIET unset reminds" reminds "$WORK" "$SB/home" "-"
+sandbox; check "QUIET set but empty reminds" reminds "$WORK" "$SB/home" ""
 sandbox; check "HOME unset reminds, no crash" reminds "$WORK" "-" "-"
+
+# The payload is asserted whole, not by substring. The JSON escape helper was removed on
+# the grounds that the message is a literal; this is what keeps that true, since adding a
+# quote or backslash to it would emit unparseable JSON that substring checks still accept.
+sandbox
+expected='{
+  "hookSpecificOutput": {
+    "hookEventName": "SessionStart",
+    "additionalContext": "No token-efficient rules found in CLAUDE.md. Run /claude-token-saver to add them, or set CLAUDE_TOKEN_SAVER_QUIET=1 to silence this."
+  }
+}'
+actual="$(cd "$WORK" && env -u CLAUDE_TOKEN_SAVER_QUIET HOME="$SB/home" bash "$HOOK")"
+if [ "$actual" = "$expected" ]; then
+  pass=$((pass + 1)); echo "  ok   reminder payload matches exactly"
+else
+  fail=$((fail + 1)); echo "  FAIL reminder payload matches exactly"
+  diff <(printf '%s' "$expected") <(printf '%s' "$actual") | head -6
+fi
 
 printf '\n%s passed, %s failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

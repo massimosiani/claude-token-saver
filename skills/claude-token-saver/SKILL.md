@@ -64,10 +64,21 @@ Present all categories with descriptions. All are selected by default.
 The merge must leave exactly one `## Token Efficiency` section. Running the command
 twice, or re-running after upgrading the plugin, must not stack a second copy.
 
+Pick the case by counting **live** headings - `## Token Efficiency` lines outside fenced
+code blocks. A heading that appears only inside a fence does not count, so a CLAUDE.md
+that merely documents this plugin takes case 2 rather than landing in case 3 with nothing
+to replace.
+
+Whichever case applies, separate the new section from what precedes it with exactly one
+blank line, adding a trailing newline first if the file lacks one. Appending straight onto
+an unterminated last line produces `- pnpm test## Token Efficiency`, which is not a
+heading at all - invisible to the replacement rule and to the hook, so the next run
+appends a second copy.
+
 1. **No file at the target path**: create one with a top-level heading and the new
    section.
-2. **File exists without a `## Token Efficiency` heading**: append the new section at the
-   end of the file and leave everything above it untouched.
+2. **File exists with no live `## Token Efficiency` heading**: append the new section at
+   the end of the file and leave everything above it untouched.
 
    Nothing cleverer than that. An earlier version tried to keep the section out of a
    trailing `# ` section by placing it before the first separator, and that rule was wrong
@@ -76,7 +87,8 @@ twice, or re-running after upgrading the plugin, must not stack a second copy.
    splits the fence. Claude Code flattens the file into context, so the nesting is
    cosmetic; a corrupted CLAUDE.md is not.
 
-3. **File exists with a `## Token Efficiency` heading**: replace it, on these terms.
+3. **File exists with one or more live `## Token Efficiency` headings**: replace, on
+   these terms.
 
    **Find every one of them, not the first.** Versions before 1.1.0 appended without
    checking, so a file can hold two or more. The end state is exactly one section, so all
@@ -103,7 +115,8 @@ twice, or re-running after upgrading the plugin, must not stack a second copy.
    prevent.
 
    **The survivor takes the position of the first section it replaced**, and the others
-   are removed outright. Without that, two implementations can both satisfy this spec and
+   are removed outright, each leaving exactly one blank line behind so the surrounding
+   sections do not run together. Without that, two implementations can both satisfy this spec and
    produce different files.
 
    On confirmation replace wholesale rather than merging rule by rule. Earlier versions
@@ -140,9 +153,13 @@ twice, or re-running after upgrading the plugin, must not stack a second copy.
 Keep the section heading exactly `## Token Efficiency`, at that heading level and at the
 start of the line: the replacement rule above depends on the exact form.
 
-The session-start hook does not, and must not be tightened to match. It matches loosely on
-purpose, so that renaming the heading to `## Token Efficiency Rules` does not leave someone
-with a reminder they cannot switch off.
+The session-start hook does not, and should stay loose. It matches the phrase anywhere in
+the file at any heading level, which keeps false reminders rare - a renamed heading still
+counts - and `CLAUDE_TOKEN_SAVER_QUIET` covers the ones that get through.
+
+The cost of that choice, stated plainly so the next maintainer can weigh it rather than
+discover it: a CLAUDE.md that merely discusses this plugin in prose silences the reminder
+even with no rules installed.
 
 ### Step 6: Confirm
 
