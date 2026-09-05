@@ -94,13 +94,34 @@ provenance comments cost nothing there. Other agents may load them.
 
 ## Session reminder
 
-A session-start hook checks whether your CLAUDE.md already contains token-efficient
-rules. If it does not, it reminds you to run `/claude-token-saver`.
+A session-start hook checks whether token-efficient rules are already in place. If none
+are, it reminds you to run `/claude-token-saver`.
 
-The check is best-effort: it looks at the project and user CLAUDE.md rather than resolving
-everything Claude Code loads, so rules kept in `.claude/rules/`, reached through an
-`@`-import, or living in a parent directory can still produce a reminder. Reworking it is
-tracked in [#2](https://github.com/massimosiani/claude-token-saver/issues/2).
+Silence it by setting `CLAUDE_TOKEN_SAVER_QUIET` to any non-empty value.
+
+It checks exactly two files: `./CLAUDE.md` and `~/.claude/CLAUDE.md`.
+
+It will therefore sometimes remind you when you are already set up - rules in
+`.claude/rules/`, reached through an `@`-import, or a session started in a subdirectory.
+That is deliberate. Earlier versions tried to work out what Claude Code had actually
+loaded, and every mechanism added to get closer produced its own bug, including one that
+silenced the reminder for every user who had the plugin installed. Naming the opt-out in
+the reminder makes being wrong cost one line of reading, which is cheaper than being
+right. The rationale lives in the comment at the top of `hooks/session-start`.
+
+## Tests
+
+`tests/run.sh` covers the hook, the only executable code here: the two files it checks, a
+hand-edited heading, an unset `HOME`, and the opt-out. It also pins the cases where the
+hook deliberately reminds you anyway - a session started in a subdirectory, rules in
+`.claude/` - so that changing them is a deliberate act rather than an accident.
+
+Two fixture rules keep the suite honest, both learned by shipping a bug it could not see.
+They are documented in the header comment of `tests/run.sh`, next to the code they
+constrain.
+
+`tests/fixtures/merge/` holds CLAUDE.md fixtures for exercising the merge step by hand,
+since that step is instructions to a model rather than code.
 
 ## Sources
 

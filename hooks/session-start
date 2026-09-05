@@ -1,32 +1,38 @@
 #!/usr/bin/env bash
-# SessionStart hook for token-efficient-setup plugin
-# Checks if CLAUDE.md has a Token Efficiency section; if not, reminds the user.
+# SessionStart hook for the claude-token-saver plugin.
+#
+# Deliberately minimal. Earlier versions tried to work out which CLAUDE.md files Claude
+# Code had actually loaded, and each mechanism added its own defects.
+#
+# The one that mattered was recursive descent: `grep -r` over ~/.claude reached this
+# plugin's own installed copy under plugins/cache, which contains the string below, so
+# the reminder never fired for any user who had the plugin. Note the specific culprit -
+# recursion into a directory nobody named. Walking *up* from $PWD was a separate feature
+# with milder bugs of its own, and cannot reach plugins/cache at all.
+#
+# So this checks two named files and nothing else, and the reminder names the opt-out.
+# That is the trade. It will sometimes remind someone who is already set up - rules in
+# .claude/rules, reached through an @-import, or a session started in a subdirectory -
+# and the cost of being wrong is one line of reading instead of a bug to fix.
+#
+# If you are tempted to make it smarter, read the four rounds of review on PR #3 first.
 
 set -euo pipefail
 
-# Check for Token Efficiency section in project CLAUDE.md
-if [ -f "CLAUDE.md" ] && grep -q "Token Efficiency" "CLAUDE.md" 2>/dev/null; then
+# Any non-empty value silences the hook. Not a truthy test: an earlier version whitelisted
+# "0", "false" and "no", which meant CLAUDE_TOKEN_SAVER_QUIET=off silenced it instead.
+if [ -n "${CLAUDE_TOKEN_SAVER_QUIET:-}" ]; then
   exit 0
 fi
 
-# Also check global CLAUDE.md
-if [ -f "${HOME}/.claude/CLAUDE.md" ] && grep -q "Token Efficiency" "${HOME}/.claude/CLAUDE.md" 2>/dev/null; then
-  exit 0
-fi
+for file in "$PWD/CLAUDE.md" "${HOME:-/nonexistent}/.claude/CLAUDE.md"; do
+  if [ -f "$file" ] && grep -q "Token Efficiency" "$file" 2>/dev/null; then
+    exit 0
+  fi
+done
 
-escape_for_json() {
-  local s="$1"
-  s="${s//\\/\\\\}"
-  s="${s//\"/\\\"}"
-  s="${s//$'\n'/\\n}"
-  s="${s//$'\r'/\\r}"
-  s="${s//$'\t'/\\t}"
-  printf '%s' "$s"
-}
-
-message="No token-efficient rules found in CLAUDE.md. Run /claude-token-saver to add them."
-escaped=$(escape_for_json "$message")
-
-printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$escaped"
+# %s with a quoted argument, so the message never becomes part of the format string.
+message="No token-efficient rules found in CLAUDE.md. Run /claude-token-saver to add them, or set CLAUDE_TOKEN_SAVER_QUIET=1 to silence this."
+printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$message"
 
 exit 0
