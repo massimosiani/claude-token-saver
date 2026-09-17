@@ -26,13 +26,13 @@ if [ -n "${CLAUDE_TOKEN_SAVER_QUIET:-}" ]; then
 fi
 
 for file in "$PWD/CLAUDE.md" "${HOME:-/nonexistent}/.claude/CLAUDE.md"; do
-  if [ -f "$file" ] && grep -q "Token Efficiency" "$file" 2>/dev/null; then
+  if [ -f "$file" ] && grep -qE "Token Efficiency|claude-token-saver:begin" "$file" 2>/dev/null; then
     exit 0
   fi
 done
 
 # %s with a quoted argument, so the message never becomes part of the format string.
-message="No token-efficient rules found in CLAUDE.md. Run /claude-token-saver to add them, or set CLAUDE_TOKEN_SAVER_QUIET=1 to silence this."
-printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$message"
+message="No token-saver marker found in the two checked CLAUDE.md files. Run /claude-token-saver to add them, or set CLAUDE_TOKEN_SAVER_QUIET=1 to silence this."
+printf '{\n  "systemMessage": "%s"\n}\n' "$message"
 
 exit 0
