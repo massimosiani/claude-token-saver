@@ -1,143 +1,172 @@
 # claude-token-saver
 
-A Claude Code plugin that generates token-efficient rules for your CLAUDE.md. It asks
-what you want, then writes rules that cut token spend without cutting output quality.
+A Claude Code plugin for choosing communication and workflow preferences in CLAUDE.md.
+Its rules aim to reduce unnecessary output and agent work. **Net token savings and
+quality preservation have not been measured for these profiles.**
 
-Rules adapted from [claude-token-efficient](https://github.com/drona23/claude-token-efficient),
-then audited against Anthropic's current prompting guidance. See [Sources](#sources).
+Rules are adapted from [claude-token-efficient](https://github.com/drona23/claude-token-efficient)
+and informed by Anthropic's prompting guidance. Setup defaults to three general
+communication rules; additional categories and model-specific behavior are opt-in.
 
 ## Install
 
-```
+Requires Claude Code, Bash for the reminder hook, and **Python 3.9+** for setup.
+The Python helper uses only the standard library: no package installation or network
+access is needed to generate or update rules.
+
+```text
 /plugin marketplace add massimosiani/claude-token-saver
-```
-
-Then install the plugin:
-
-```
 /plugin install claude-token-saver@claude-token-saver
 ```
 
 ## Usage
 
-Run the slash command:
-
-```
+```text
 /claude-token-saver
 ```
 
-The plugin walks you through:
+If that short name conflicts with another command, use the canonical name:
 
-1. **Location** - project CLAUDE.md or global `~/.claude/CLAUDE.md`
-2. **Categories** - pick which rule sets to include:
-   - Communication style - what the agent says: cuts filler, preamble and sycophancy, sets response length
-   - Agent workflow - what the agent does: scope discipline, no redundant verification passes, sparing subagent use, targeted edits, confirmation before touching protected files
-   - Formatting and error handling - straight quotes and ASCII in prose, full tracebacks instead of silent failures, tight code-review comments, boundary-condition checks, large-file limits
-3. **Conciseness level** (if Communication style is selected):
-   - Light - drops filler and sycophancy, keeps normal sentence length
-   - Medium - brief answers, no preamble or closing, results over narration
-   - Full - conclusion only, with reasoning, alternatives and caveats supplied on request
+```text
+/claude-token-saver:claude-token-saver
+```
 
-The rules go under a `## Token Efficiency` section, and the rest of your CLAUDE.md is
-left untouched. Re-running the command shows you a diff and replaces that section rather
-than appending a second one, so changing your conciseness level or upgrading the plugin
-does not leave stale or contradictory rules behind. Decline the diff and nothing changes.
+The skill asks for missing preferences and honors choices you already supplied:
 
-## Where the savings come from
+1. **Location:** `./CLAUDE.md` in the current directory (default), or global
+   `~/.claude/CLAUDE.md`. It shows the absolute target before writing.
+2. **Target model:** general/mixed models (default), or Claude Opus 5. Shared and global
+   files default to general rules. Opus 5 additions require an explicit selection.
+3. **Categories:** Communication Style only (default). Optionally add Agent Workflow
+   (scope, relevant checks, targeted edits) and Formatting and Error Handling (language
+   preservation, useful diagnostics, review clarity).
+4. **Conciseness**, when communication is selected: Light (default), Medium, or Full.
+   Levels are cumulative. Full gives the conclusion with additional explanation when
+   requested or necessary to act correctly.
 
-The intuition is that verbose prose is the problem, so the fix is shorter sentences. It
-mostly isn't. The expensive behaviors are structural:
+A bundled helper generates the rules verbatim, prints a diff and stores the proposed
+file in a private temporary plan. **Every write requires confirmation of that preview.**
+Decline and the target remains untouched. Accept and the helper applies exactly that
+plan, refusing if the file or plan changed in the meantime. Temporary plans contain
+project instructions and are deleted when the workflow finishes.
 
-- **Scope expansion** - work you did not ask for, at full token price.
-- **Redundant verification** - a self-check pass on top of work the model already checked.
-- **Subagent fan-out** - each subagent re-establishes context, re-explores, reports back,
-  and then the coordinator re-reads the report.
-- **Self-correction narration** - re-litigating earlier statements that changed nothing.
+## Updating existing rules
 
-Those live in the **Agent workflow** category, which is why it is worth keeping even if
-you skip the rest. Prose compression, by contrast, has a floor: past a point it produces
-fragments and abbreviations that cost the reader a reread, and the saving goes with it.
-The rules aim for *include less*, not *write it shorter*.
+New sections are bounded by stable comments:
 
-Rules tuned to a specific model are marked `(Claude Opus 5)` and carry their reason
-inline, so you can tell at a glance which lines to drop if you point the file at another
-agent. The marker names one model on purpose: several of these behaviors reverse between
-generations - Opus 4.7 and 4.8 under-delegate to subagents where Opus 5 over-delegates,
-and the 4.6 family is documented as more concise where Opus 5 narrates more - so a wider
-range would be wrong.
+```markdown
+<!-- claude-token-saver:begin -->
+## Token Efficiency
 
-## When this helps, and when it does not
+...selected rules...
 
-**Worth it for:** high output volume, repeated automation, long agentic sessions, teams
-wanting consistent output.
+<!-- claude-token-saver:end -->
+```
 
-**Not worth it for:** one-off short queries, or exploratory work where you want the model
-to think out loud. The file is re-sent as input on every message, so on low output volume
-the overhead exceeds the saving.
+You can edit the heading and rules inside them. Keep the markers intact. Rerunning setup
+replaces the marked content only after showing your edits in the confirmation diff.
+Multiple owned blocks are consolidated at the first block's position. Text outside the
+replaced blocks is preserved byte-for-byte, including existing line endings; appending
+may add a separator after the original content.
 
-Two numbers worth knowing before you install this:
+Legacy exact `## Token Efficiency` sections migrate automatically when their boundaries
+are unambiguous. The helper understands ATX and Setext headings, backtick and tilde
+fences, and standalone HTML comments. It is a conservative scanner, not a complete
+CommonMark parser: raw HTML, ambiguous nested Markdown, unfinished blocks, malformed
+markers and recognizable renamed legacy headings cause it to stop without writing.
+Symlink and hard-link targets are also refused, to preserve their link semantics.
 
-- Upstream measures roughly **4-12%** real token savings via API benchmarks. The headline
-  63% figure is word reduction on a small directional test, not a controlled study.
-- Research on agent context files, as reported in the AGENTS.md guides linked below,
-  finds machine-generated ones can *reduce* task success while raising inference cost, and
-  that hand-written ones help only when they stay minimal and precise. Those guides cite
-  the finding rather than being the study, so treat it as directional.
+For a renamed legacy section, place the begin/end markers around **only the rules you
+want managed**, then preview again. An arbitrary old title without “Token Efficiency”
+cannot be identified automatically: identify that block before rerunning setup. For
+unsupported Markdown, update the rules manually or simplify the ambiguous construct
+before retrying; markers alone do not make unsupported syntax parseable.
 
-So keep the file small, and delete any rule you do not actually want followed. Claude Code
-documentation suggests targeting **under 200 lines** per CLAUDE.md; longer files consume
-more context and reduce adherence. A rule nobody follows costs tokens every session and
-buys nothing.
+Changes are written through an atomic file replacement. Existing file permissions are
+preserved; new files and temporary plans are private (`0600`). Content checks catch
+changes since preview and during write preparation; they do not lock out another editor
+in the final interval before replacement. Avoid simultaneous edits while applying.
 
-Claude Code strips block-level HTML comments before loading the file, so the generated
-provenance comments cost nothing there. Other agents may load them.
+## Savings and tradeoffs
+
+Less narration, tighter scope and fewer unnecessary tool or subagent calls may reduce
+cost. Extra instructions also consume context, can conflict with project conventions,
+and may increase follow-up work. Keep only rules that improve your actual tasks.
+
+The default profile deliberately starts small. Workflow checks stay proportional to the
+change; files can be reread when context is missing; already-authorized configuration
+edits do not require another approval. Formatting rules preserve the user's language,
+and diagnostics surface useful errors without demanding every traceback or sensitive value.
+
+Opus 5 additions address that model's documented verification, delegation and narration
+behavior. They are emitted separately from general rules, only when both Opus 5 and Agent
+Workflow are selected. Rerun with the general model when switching to other or mixed models.
+
+Upstream's [benchmark summary](https://github.com/drona23/claude-token-efficient/blob/0d30a6db75af983b8ababf585f28faefdfc87895/benchmark/SUMMARY.md)
+tests different rule sets and primarily one-shot prompts. Output-token reduction is not
+the same as total-token or monetary savings, and its results do not establish this
+plugin's effectiveness. We do not claim the upstream percentages for these profiles.
+
+Prompt caching changes the cost of repeated input, so context size alone does not predict
+billed cost. Evaluate **total cost per successfully completed task**, recording correctness,
+completeness, input/cache/output usage, tool calls and elapsed time. Compare repeated runs
+of unchanged baseline, communication-only, workflow-only and combined profiles on the
+same tasks, model and effort setting; include regressions as well as savings.
+
+Claude Code recommends targeting under 200 lines per CLAUDE.md. Its memory loader strips
+block-level HTML comments, so the generated ownership and provenance comments do not
+consume model context there. Other agents may load them.
 
 ## Session reminder
 
-A session-start hook checks whether token-efficient rules are already in place. If none
-are, it reminds you to run `/claude-token-saver`.
+At startup only, a synchronous hook checks exactly `./CLAUDE.md` and
+`~/.claude/CLAUDE.md` for the phrase `Token Efficiency` or a begin marker. When neither
+matches, it emits a user-facing `systemMessage`, not additional instructions to Claude.
+It does not repeat on clear, compact or resume.
 
-Silence it by setting `CLAUDE_TOKEN_SAVER_QUIET` to any non-empty value.
+Set `CLAUDE_TOKEN_SAVER_QUIET` to any non-empty value to silence it. The lookup is deliberately
+limited: rules in parent directories, `.claude/CLAUDE.md`, `.claude/rules/`, imports or a
+custom config directory may produce a false reminder. A mention inside prose, a comment
+or a fenced example can silence it. The reminder is an onboarding hint, not a memory audit.
 
-It checks exactly two files: `./CLAUDE.md` and `~/.claude/CLAUDE.md`.
+## Upgrade and removal
 
-It will therefore sometimes remind you when you are already set up - rules in
-`.claude/rules/`, reached through an `@`-import, or a session started in a subdirectory.
-That is deliberate. Earlier versions tried to work out what Claude Code had actually
-loaded, and every mechanism added to get closer produced its own bug, including one that
-silenced the reminder for every user who had the plugin installed. Naming the opt-out in
-the reminder makes being wrong cost one line of reading, which is cheaper than being
-right. The rationale lives in the comment at the top of `hooks/session-start`.
+Update the plugin with `/plugin update claude-token-saver@claude-token-saver`, then rerun
+setup to review changes to generated rules. Updating or uninstalling the plugin does
+**not** modify existing CLAUDE.md files.
+
+To remove generated rules, ask `/claude-token-saver` to remove them from the project or
+global file. It previews removal and requires confirmation. Alternatively, manually delete
+the inclusive begin/end block. Legacy sections use the same conservative migration checks.
+Uninstall the plugin separately with `/plugin uninstall claude-token-saver@claude-token-saver`.
 
 ## Tests
 
-`tests/run.sh` covers the hook, the only executable code here: the two files it checks, a
-hand-edited heading, an unset `HOME`, and the opt-out. It also pins the cases where the
-hook deliberately reminds you anyway - a session started in a subdirectory, rules in
-`.claude/` - so that changing them is a deliberate act rather than an accident.
+```bash
+bash tests/run.sh
+python3 -m unittest discover -s tests -p 'test_*.py' -v
+```
 
-Two fixture rules keep the suite honest, both learned by shipping a bug it could not see.
-They are documented in the header comment of `tests/run.sh`, next to the code they
-constrain.
-
-`tests/fixtures/merge/` holds CLAUDE.md fixtures for exercising the merge step by hand,
-since that step is instructions to a model rather than code.
+The shell suite covers the reminder and its deliberately limited lookup. Python tests
+cover literal rule selection, model gating, historical merge fixtures, Markdown boundaries,
+byte preservation, idempotence, removal, stale approvals, private plans and failed writes.
+CI runs both suites on Linux and macOS and checks the minimum Python version on Linux.
+These deterministic checks do not establish end-to-end Claude behavior or cost savings.
 
 ## Sources
 
-- [claude-token-efficient](https://github.com/drona23/claude-token-efficient) - the
-  original rule set and the benchmark numbers quoted above.
-- Anthropic's prompt-audit and model-migration guidance bundled with Claude Code, reachable
-  as `/claude-api prompt-audit` - the source for the anti-patterns this rule set drops
-  (numeric output ceilings, banned-phrase lists, plan-before-acting) and the model-tuned
-  rules it adds. The verification rule was reworked rather than dropped, so that removing
-  the redundant second pass does not also remove running the tests.
-- [How Claude remembers your project](https://code.claude.com/docs/en/memory) - CLAUDE.md
-  locations, the 200-line guidance, HTML comment stripping.
-- AGENTS.md guidance for the cross-tool view of context files:
-  [morphllm](https://www.morphllm.com/agents-md-guide),
-  [buildbetter](https://blog.buildbetter.ai/agents-md-complete-guide-for-engineering-teams-in-2026/).
+- [Upstream rules and license](https://github.com/drona23/claude-token-efficient) and
+  the pinned benchmark above; see [third-party notices](THIRD_PARTY_NOTICES.md).
+- [Prompting Claude Opus 5](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-opus-5)
+  for the optional model-specific additions.
+- [Claude Code memory](https://code.claude.com/docs/en/memory),
+  [prompt caching](https://code.claude.com/docs/en/prompt-caching),
+  [hook output](https://code.claude.com/docs/en/hooks#json-output), and
+  [skill naming](https://code.claude.com/docs/en/skills#how-a-skill-gets-its-command-name).
+- [Evaluating AGENTS.md](https://www.sri.inf.ethz.ch/publications/gloaguen2026agentsmd),
+  research on repository context files generally, not an evaluation of this plugin.
 
 ## License
 
-MIT
+[MIT](LICENSE). Adapted upstream material retains its notice in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

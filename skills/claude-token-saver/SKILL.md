@@ -1,171 +1,94 @@
 ---
 name: claude-token-saver
-description: Set up a CLAUDE.md file with token-efficient rules. Asks questions about preferred categories and conciseness level, then generates or merges into CLAUDE.md.
+description: Choose communication and workflow preferences, then preview and safely update a managed rules block in CLAUDE.md. Can also remove previously generated rules.
 disable-model-invocation: true
 ---
 
-# Token-Efficient CLAUDE.md Setup
+# CLAUDE.md Rule Setup
 
-Generate a CLAUDE.md file with token-efficient rules, adapted from
-https://github.com/drona23/claude-token-efficient and audited against Anthropic's
-current prompting guidance.
+Use the bundled Python helper for generation and file edits. It copies literal rules
+from [references/rules.md](references/rules.md) and preserves content outside its managed
+blocks. Read that reference when explaining the available preferences.
 
-Read the rules reference at [references/rules.md](references/rules.md) before proceeding.
+## Choose preferences
 
-## Workflow
+Honor choices already supplied by the user; ask only for missing ones. Present the
+following defaults as suggestions, not as answers the user has already submitted.
 
-### Step 1: Ask where to write
+- **Location:** project `./CLAUDE.md` (default) or global `~/.claude/CLAUDE.md`.
+  Explain that project means the current directory; show the absolute target path.
+- **Target model:** general/mixed models (default) or Claude Opus 5. Select this before
+  generation. Global or shared files should use general rules unless the user explicitly
+  wants Opus 5 additions. Do not infer the target from the current session's model.
+- **Categories:** Communication Style only (default). Agent Workflow and Formatting and
+  Error Handling are optional. Describe workflow as scope, relevant checks and targeted
+  edits; formatting as language preservation, useful diagnostics and review clarity.
+- **Conciseness:** Light (default), Medium or Full, when communication is selected.
+  Levels are cumulative. Full omits extra explanation unless requested or necessary.
 
-Ask the user:
+For a removal request, establish only the target location and use `--remove` below.
 
-> Where should I write the CLAUDE.md?
->
-> 1. **Project** (default) - `./CLAUDE.md` in the current working directory
-> 2. **Global** - `~/.claude/CLAUDE.md`, applies to all projects
+## Preview
 
-Default to project if the user just presses enter or says "default".
+Requires Python 3.9 or newer, with no third-party packages. If unavailable, explain the
+requirement and leave the target untouched; do not improvise the merge in model-written code.
+Resolve `scripts/configure.py` relative to this skill's directory (inside the installed
+plugin, not the user's project). Use shell quoting for all paths. For example:
 
-### Step 2: Ask which categories to include
-
-Present all categories with descriptions. All are selected by default.
-
-> Which rule categories do you want? Enter numbers to include (e.g. 1,3), or press enter for all.
->
-> 1. **Communication style** - what the agent says. Cuts filler, preamble and sycophancy, and sets response length.
-> 2. **Agent workflow** - what the agent does. Scope discipline, verification without a redundant second pass, sparing subagent use, targeted edits, confirmation before touching protected files. This is where the largest savings are.
-> 3. **Formatting and error handling** - straight quotes and ASCII in prose, full tracebacks instead of silent failures, tight code-review comments, boundary-condition checks, large-file limits.
-
-### Step 3: Ask conciseness level (only if Communication Style is included)
-
-> What conciseness level?
->
-> 1. **Light** - drops filler and sycophancy, keeps normal sentence length
-> 2. **Medium** - brief answers, no preamble or closing, results over narration
-> 3. **Full** - conclusion only, with reasoning, alternatives and caveats supplied on request
-
-### Step 4: Generate
-
-1. Collect the selected rules from `references/rules.md` based on the user's choices.
-2. For Communication Style, take the rules up to and including the selected conciseness
-   level. The levels are cumulative: Medium includes Light, Full includes both.
-3. For the other categories, include every rule in that category.
-4. Copy each rule's text verbatim. Do not re-summarize or compress it; the wording is
-   the product.
-   The `### Light` / `### Medium` / `### Full` headings and the `All of the above, plus:`
-   lines between them are structure for the reference file, not rules. Drop them and emit
-   one flat bullet list under `### Communication Style`; copied through, those connectives
-   would point at headings the output format does not have.
-5. Rules marked `(Claude Opus 5)` carry their reason inline. Keep the marker and the
-   reason - the reason is what makes the rule checkable later. Do not widen the marker to
-   a range: the reference file explains which neighbouring models behave the opposite way.
-
-### Step 5: Merge
-
-The merge must leave exactly one `## Token Efficiency` section. Running the command
-twice, or re-running after upgrading the plugin, must not stack a second copy.
-
-Pick the case by counting **live** headings - `## Token Efficiency` lines outside fenced
-code blocks. A heading that appears only inside a fence does not count, so a CLAUDE.md
-that merely documents this plugin takes case 2 rather than landing in case 3 with nothing
-to replace.
-
-Whichever case applies, separate the new section from what precedes it with exactly one
-blank line, adding a trailing newline first if the file lacks one. Appending straight onto
-an unterminated last line produces `- pnpm test## Token Efficiency`, which is not a
-heading at all - invisible to the replacement rule and to the hook, so the next run
-appends a second copy.
-
-1. **No file at the target path**: create one with a top-level heading and the new
-   section.
-2. **File exists with no live `## Token Efficiency` heading**: append the new section at
-   the end of the file and leave everything above it untouched.
-
-   Nothing cleverer than that. An earlier version tried to keep the section out of a
-   trailing `# ` section by placing it before the first separator, and that rule was wrong
-   three times running - on the document title, on files that open with a separator
-   instead of a title, and on `# ` comment lines inside code fences, where inserting
-   splits the fence. Claude Code flattens the file into context, so the nesting is
-   cosmetic; a corrupted CLAUDE.md is not.
-
-3. **File exists with one or more live `## Token Efficiency` headings**: replace, on
-   these terms.
-
-   **Find every one of them, not the first.** Versions before 1.1.0 appended without
-   checking, so a file can hold two or more. The end state is exactly one section, so all
-   of them have to go.
-
-   **Ignore headings inside fenced code blocks.** A CLAUDE.md that documents this plugin
-   quotes the heading in an example; that is not a live section, and replacing from inside
-   the fence would shred the user's example.
-
-   **Bound each section correctly**: from its heading to the next heading at `##` level or
-   higher - a line beginning `## ` or `# `, note the trailing space - or to end of file,
-   ignoring any heading inside a fence. Two traps: the `###` subsection headings inside
-   the section are part of it, so a naive "next line starting with `##`" scan stops
-   immediately and orphans the rest; and a `# ` heading below the section is *not* part of
-   it, so a scan looking only for `##` runs past it and deletes the user's other sections.
-
-   **Ask before replacing.** Show a diff of what is there against what you would write,
-   and get confirmation. Step 6 invites people to edit these rules, so an existing section
-   may hold deliberate changes; regenerating over them silently destroys the work this
-   skill asked for.
-
-   **If the user declines, change nothing** and say the file was left as it is. Do not
-   fall through to appending: a second section is the outcome this whole step exists to
-   prevent.
-
-   **The survivor takes the position of the first section it replaced**, and the others
-   are removed outright, each leaving exactly one blank line behind so the surrounding
-   sections do not run together. Without that, two implementations can both satisfy this spec and
-   produce different files.
-
-   On confirmation replace wholesale rather than merging rule by rule. Earlier versions
-   emitted different subsection names (`Formatting and Workflow`, `Error and File
-   Handling`) and rules the current set contradicts, such as an 8-10 word sentence cap;
-   only a whole-section replacement clears those.
-
-### Output format
-
-```markdown
-# CLAUDE.md
-
-## Token Efficiency
-
-<!-- Rules generated by /claude-token-saver -->
-<!-- https://github.com/massimosiani/claude-token-saver -->
-<!-- Adapted from https://github.com/drona23/claude-token-efficient (MIT) -->
-
-### Communication Style
-
-- rule 1
-- rule 2
-
-### Agent Workflow
-
-- rule 1
-
-### Formatting and Error Handling
-
-- rule 1
-...
+```bash
+plan_dir="$(mktemp -d)"
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/claude-token-saver/scripts/configure.py" preview \
+  --target "/absolute/project/CLAUDE.md" --plan "$plan_dir/plan.json" \
+  --categories communication --level light --model general
 ```
 
-Keep the section heading exactly `## Token Efficiency`, at that heading level and at the
-start of the line: the replacement rule above depends on the exact form.
+Supported category names are `communication`, `workflow`, and `formatting`, comma-separated.
+Model values are `general` and `opus-5`. For removal, replace the category, level and model
+arguments with `--remove`.
 
-The session-start hook does not, and should stay loose. It matches the phrase anywhere in
-the file at any heading level, which keeps false reminders rare - a renamed heading still
-counts - and `CLAUDE_TOKEN_SAVER_QUIET` covers the ones that get through.
+The helper prints a diff and an approval digest and writes a private plan. Show the full
+diff and target path to the user. Explain selected model additions before writing. If
+there are no changes, report that and stop.
 
-The cost of that choice, stated plainly so the next maintainer can weigh it rather than
-discover it: a CLAUDE.md that merely discusses this plugin in prose silences the reminder
-even with no rules installed.
+Legacy exact `## Token Efficiency` sections can be migrated, including duplicates.
+Renamed legacy headings, malformed markers, unfinished blocks and unsupported Markdown
+produce an error rather than a guessed edit. On error, explain it and stop; do not bypass
+the helper. Offer a manual migration for the user to review: enclose only their existing
+rules with the begin/end markers shown below. Unsupported syntax may also need manual simplification; adding
+markers alone does not make it parseable. Arbitrary legacy renames
+without a recognizable title require the user to identify the block.
 
-### Step 6: Confirm
+## Confirm and apply
 
-Show the user the file path and what was written.
+Ask for confirmation of this exact diff before any target write, including first setup
+or removal, unless the user has already explicitly approved that exact preview.
+On decline, remove only the temporary plan directory and leave the target untouched.
+On acceptance, apply with the digest printed by preview:
 
-If any `(Claude Opus 5)` rules were included, name them and say they are tuned to that
-model's documented behavior - offer to drop them if the user works with a different model
-or agent. Then invite edits: a rule nobody follows costs tokens on every session and buys
-nothing.
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/claude-token-saver/scripts/configure.py" apply \
+  --plan "$plan_dir/plan.json" --approve "<approval digest from preview>"
+```
+
+If the target or plan changed, generate a new preview and obtain confirmation of the new
+diff. Never silently regenerate a different edit under an earlier approval. The helper
+refuses symlink and hard-link targets; explain that limitation rather than unlinking them.
+Delete the temporary plan directory when finished, including acceptance, decline,
+no-change and error exits: it may contain private project instructions.
+
+Report the updated path, selected categories and model. Explain that users may edit the
+rules and heading inside the markers, and that rerunning replaces those edits only after
+another reviewed diff. Preserve the markers themselves:
+
+```markdown
+<!-- claude-token-saver:begin -->
+## Token Efficiency
+
+...selected rules...
+
+<!-- claude-token-saver:end -->
+```
+
+Generated rules remain after plugin uninstall and change only when setup is rerun. To
+remove them, use the helper's removal preview or delete the inclusive marked block.
+Do not promise measured token savings: this project has no cost/quality benchmark yet.

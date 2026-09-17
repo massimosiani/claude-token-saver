@@ -22,7 +22,13 @@ RULES='## Token Efficiency
 pass=0
 fail=0
 declare -a sandboxes=()
-trap 'for s in ${sandboxes[@]+"${sandboxes[@]}"}; do rm -rf "$s"; done' EXIT
+cleanup() {
+  local sandbox_path
+  for sandbox_path in ${sandboxes[@]+"${sandboxes[@]}"}; do
+    rm -rf "$sandbox_path"
+  done
+}
+trap cleanup EXIT
 
 # Sets $SB and $WORK. Not called via $( ), or the array append lands in a subshell and
 # the cleanup trap silently frees nothing - which is what the previous version did.
@@ -36,7 +42,7 @@ sandbox() {
   version="$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$ROOT/.claude-plugin/plugin.json" | head -1)"
   p="$SB/home/.claude/plugins/cache/mp/claude-token-saver/$version/skills/claude-token-saver"
   mkdir -p "$p"
-  printf 'Keep the section heading exactly `## Token Efficiency`.\n' > "$p/SKILL.md"
+  printf '## Token Efficiency\n' > "$p/SKILL.md"
 }
 
 # check <label> <silent|reminds> <workdir> <home|-> <quiet|->
@@ -62,8 +68,8 @@ check() {
   [ -z "$err" ] || problem="${problem:+$problem; }stderr: $(printf '%s' "$err" | head -1)"
   if [ "$actual" = "reminds" ]; then
     case "$out" in
-      *'"hookEventName": "SessionStart"'*) ;;
-      *) problem="${problem:+$problem; }no SessionStart payload" ;;
+      *'"systemMessage":'*) ;;
+      *) problem="${problem:+$problem; }no user-facing payload" ;;
     esac
     case "$out" in
       *CLAUDE_TOKEN_SAVER_QUIET*) ;;
@@ -88,7 +94,6 @@ sandbox; printf '%s' "$RULES" > "$SB/home/.claude/CLAUDE.md"
 sandbox; printf '## Token Efficiency Rules\n\n- mine\n' > "$WORK/CLAUDE.md"
          check "hand-edited heading still counts" silent "$WORK" "$SB/home" "-"
 
-# Documented limitations, pinned so that changing them is a deliberate act.
 # The most common real configuration: a project CLAUDE.md with build notes and no marker,
 # plus global rules. Without this, the loop's second iteration is only ever reached
 # because the first file is absent, never because its grep failed.
@@ -104,6 +109,9 @@ sandbox; mkdir -p "$WORK/.claude/rules"; printf '%s' "$RULES" > "$WORK/.claude/r
 sandbox; mkdir -p "$WORK/.claude"; printf '%s' "$RULES" > "$WORK/.claude/CLAUDE.md"
          check ".claude/CLAUDE.md reminds (known limitation)" reminds "$WORK" "$SB/home" "-"
 
+sandbox; printf '<!-- claude-token-saver:begin -->\n# My preferences\n<!-- claude-token-saver:end -->\n' > "$WORK/CLAUDE.md"
+         check "managed block with renamed heading" silent "$WORK" "$SB/home" "-"
+
 sandbox; check "QUIET=1 silences" silent "$WORK" "$SB/home" "1"
 sandbox; check "QUIET=off also silences (any value)" silent "$WORK" "$SB/home" "off"
 sandbox; check "QUIET unset reminds" reminds "$WORK" "$SB/home" "-"
@@ -115,10 +123,7 @@ sandbox; check "HOME unset reminds, no crash" reminds "$WORK" "-" "-"
 # quote or backslash to it would emit unparseable JSON that substring checks still accept.
 sandbox
 expected='{
-  "hookSpecificOutput": {
-    "hookEventName": "SessionStart",
-    "additionalContext": "No token-efficient rules found in CLAUDE.md. Run /claude-token-saver to add them, or set CLAUDE_TOKEN_SAVER_QUIET=1 to silence this."
-  }
+  "systemMessage": "No token-saver marker found in the two checked CLAUDE.md files. Run /claude-token-saver to add them, or set CLAUDE_TOKEN_SAVER_QUIET=1 to silence this."
 }'
 actual="$(cd "$WORK" && env -u CLAUDE_TOKEN_SAVER_QUIET HOME="$SB/home" bash "$HOOK")"
 if [ "$actual" = "$expected" ]; then
